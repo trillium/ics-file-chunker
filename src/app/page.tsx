@@ -1,55 +1,80 @@
+"use client";
+
 import Image from "next/image";
+import { FileUpload } from "./FileUpload";
+import React, { useState } from "react";
+import { parseIcsFile, chunkIcsFile, IcsChunk } from "../utils";
 
 export default function Home() {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [chunks, setChunks] = useState<IcsChunk[] | null>(null);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [parsing, setParsing] = useState(false);
+  const chunkSize = 1024 * 1024; // 1MB default
+
+  const handleFileSelected = async (file: File) => {
+    setSelectedFile(file);
+    setParseError(null);
+    setChunks(null);
+    setParsing(true);
+    try {
+      await parseIcsFile(file); // Validate and parse
+      const fileChunks = chunkIcsFile(file, chunkSize);
+      setChunks(fileChunks);
+    } catch (err) {
+      setParseError(
+        err instanceof Error ? err.message : "Failed to parse file"
+      );
+    } finally {
+      setParsing(false);
+    }
+  };
+
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+        <h1 className="text-2xl font-bold mb-4">ICS File Chunker</h1>
+        <FileUpload onFileSelected={handleFileSelected} />
+        {selectedFile && (
+          <div className="mt-4 text-green-700">
+            Selected file: {selectedFile.name}
+          </div>
+        )}
+        {parsing && (
+          <div className="text-blue-700 mt-2">Parsing and chunking...</div>
+        )}
+        {parseError && <div className="text-red-600 mt-2">{parseError}</div>}
+        {chunks && (
+          <div className="mt-4 text-blue-800">
+            <div>Chunks created: {chunks.length}</div>
+            <ul className="list-disc ml-6 mt-2">
+              {chunks.map((chunk) => (
+                <li key={chunk.index} className="flex items-center gap-2">
+                  Chunk {chunk.index + 1}: {chunk.size.toLocaleString()} bytes
+                  <button
+                    className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs font-semibold border border-blue-200"
+                    onClick={() => {
+                      const url = URL.createObjectURL(chunk.data);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `${
+                        selectedFile?.name.replace(/\\.ics$/, "") || "chunk"
+                      }-part${chunk.index + 1}.ics`;
+                      document.body.appendChild(a);
+                      a.click();
+                      setTimeout(() => {
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                      }, 100);
+                    }}
+                  >
+                    Download
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </main>
       <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
         <a
