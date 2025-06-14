@@ -33,7 +33,7 @@ describe("ICS File Chunker UI Integration", () => {
 
   it("renders upload UI and handles valid file upload", async () => {
     render(<Home />);
-    expect(screen.getByText(/ICS File Chunker/i)).not.toBeNull();
+    expect(screen.getByRole('heading', { name: /ICS File Chunker/i })).not.toBeNull();
     const input = screen.getByLabelText(/upload .ics file/i);
     const file = createFile();
     fireEvent.change(input, { target: { files: [file] } });
