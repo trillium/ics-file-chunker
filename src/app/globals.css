@@ -5,13 +5,6 @@
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -20,7 +13,28 @@
 }
 
 body {
-  background: var(--background);
+  background: linear-gradient(135deg, #e0e7ff 0%, #f0fdfa 100%);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: linear-gradient(135deg, #18181b 0%, #0f172a 100%);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  background: #e0e7ff;
+}
+::-webkit-scrollbar-thumb {
+  background: #a5b4fc;
+  border-radius: 4px;
+}
+
+.card {
+  box-shadow: 0 4px 24px 0 rgba(30, 64, 175, 0.08),
+    0 1.5px 4px 0 rgba(30, 64, 175, 0.04);
 }
