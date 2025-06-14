@@ -1,4 +1,4 @@
-import { chunkIcsFile, parseIcsFile, IcsChunk } from "../utils";
+import { chunkIcsFile, parseIcsFile } from "../utils";
 
 describe("ICS File Chunker Utilities", () => {
     const mockIcsText = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Test Event\nEND:VEVENT\nEND:VCALENDAR`;
@@ -50,6 +50,36 @@ describe("ICS File Chunker Utilities", () => {
             const file = createMockFile("");
             const chunks = chunkIcsFile(file, 1000);
             expect(chunks.length).toBe(0);
+        });
+    });
+
+    describe("chunkIcsFile with various chunk sizes", () => {
+        it("should create correct number and size of chunks for 1KB chunk size", () => {
+            const text = "A".repeat(2500); // 2500 bytes
+            const file = createMockFile(text);
+            const chunks = chunkIcsFile(file, 1024); // 1KB
+            expect(chunks.length).toBe(3);
+            expect(chunks[0].size).toBe(1024);
+            expect(chunks[1].size).toBe(1024);
+            expect(chunks[2].size).toBe(452);
+        });
+
+        it("should create a single chunk if file size is less than chunk size", () => {
+            const text = "A".repeat(500); // 500 bytes
+            const file = createMockFile(text);
+            const chunks = chunkIcsFile(file, 1024); // 1KB
+            expect(chunks.length).toBe(1);
+            expect(chunks[0].size).toBe(500);
+        });
+
+        it("should create correct chunks for exact multiples of chunk size", () => {
+            const text = "A".repeat(3000); // 3KB
+            const file = createMockFile(text);
+            const chunks = chunkIcsFile(file, 1000);
+            expect(chunks.length).toBe(3);
+            expect(chunks[0].size).toBe(1000);
+            expect(chunks[1].size).toBe(1000);
+            expect(chunks[2].size).toBe(1000);
         });
     });
 });
